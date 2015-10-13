@@ -10,17 +10,17 @@ import urllib
 ssh_query = None
 client = None
 
-""" each one second, a GET package is send to the server """
 # need to add a target
 def sending():
+	""" each one second, a GET package is send to the server """
 	global client
-	
+
 	while True:
 		client.request("GET")
 		threading.Condition.wait(1000)
 
-""" take reply of server and use a socket (sockSsh) to redirect on 22 port """
 def forwarding():
+	""" take reply of server and use a socket (sockSsh) to redirect on 22 port """
 	global ssh_query
 	global client
 
@@ -43,10 +43,9 @@ if __name__ == "__main__":
 	client = http.client.HTTPConnection("localhost",8000)
 	sockSsh = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
-	
+
 	send_thread = threading.Thread(None, sending, name="send-getting")
 	send_thread.start()
-	
+
 	forw_thread = threading.Thread(None, forwarding, name="forward")
 	forw_thread.start()
-
