@@ -10,9 +10,8 @@ import urllib
 ssh_query = None
 client = None
 
-# need to add a target
 def sending():
-	""" each one second, a GET package is send to the server """
+	""" each second, a GET package is send to the server """
 	global client
 
 	while True:
@@ -25,15 +24,14 @@ def forwarding():
 	global client
 
 	while True :
-		#threading.Condition.wait(1000)
 		reply = client.getresponse()
 		if reply.reason == "OK":
 			data = client.getresponse()
 			pack = base64.b64decode(data)
 			cmd = pack.read()
-			#sockSsh.send(cmd_bin)
-
-
+			ssh_query.put(cmd)
+		else:
+			threading.Condition.wait(1000)
 
 
 if __name__ == "__main__":
