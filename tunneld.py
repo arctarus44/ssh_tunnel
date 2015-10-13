@@ -56,7 +56,8 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 
 def httpd():
 	server_class = http.server.HTTPServer
-	httpd = server_class(("localhost", forwarding_port), TunnelHTTPHandler)
+	httpd = server_class((socket.gethostname(), forwarding_port),
+						 TunnelHTTPHandler)
 	print("Starting the HTTP server thread")
 	httpd.serve_forever()
 
