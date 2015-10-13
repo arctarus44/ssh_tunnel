@@ -11,7 +11,6 @@ ssh_query = None
 client = None
 
 """ each one second, a GET package is send to the server """
-# need to add a target
 def sending():
 	global client
 	
@@ -25,15 +24,14 @@ def forwarding():
 	global client
 
 	while True :
-		#threading.Condition.wait(1000)
 		reply = client.getresponse()
 		if reply.reason == "OK":
 			data = client.getresponse()
 			pack = base64.b64decode(data)
 			cmd = pack.read()
-			#sockSsh.send(cmd_bin)
-
-
+			ssh_query.put(cmd)
+		else:
+			threading.Condition.wait(1000)
 
 
 if __name__ == "__main__":
