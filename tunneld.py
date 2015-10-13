@@ -4,9 +4,8 @@ from queue import Queue
 import socket
 import sys
 import base64
-
 import urllib
-import cgi
+import argparse
 
 CONTENT_TYPE = "Content-type"
 TXT_HTML = "text/html"
@@ -17,6 +16,10 @@ PAYLOAD = "payload"
 
 fifo_query = None
 client = None
+parser = None
+
+listening_port = None
+forwarding_port = None
 
 class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 
@@ -35,14 +38,15 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 		self.wfile.write(query)
 
 	def do_POST(self):
+		"""Manage to a POST request."""
 		global client
 		length = int(self.headers['Content-Length'])
-		post_data = urllib.parse.parse_qs(self.rfile.read(length).decode('utf-8'))
+		data = urllib.parse.parse_qs(self.rfile.read(length).decode('utf-8'))
 		if client == None:
 			# todo think something clever when no client is connected
 			print("TODO")
 		else:
-			payload = post_data[PAYLOAD][0]
+			payload = data[PAYLOAD][0]
 			client.send(base64.b64decode(payload))
 			self.send_response(200)
 			self.send_header(CONTENT_TYPE, TXT_HTML)
@@ -52,7 +56,7 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 
 def httpd():
 	server_class = http.server.HTTPServer
-	httpd = server_class(("localhost", 8000), TunnelHTTPHandler)
+	httpd = server_class(("localhost", forwarding_port), TunnelHTTPHandler)
 	print("Starting the HTTP server thread")
 	httpd.serve_forever()
 
@@ -61,21 +65,30 @@ def listend():
 	global client
 	print("Starting the query listener thread")
 	socket_query = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	socket_query.bind(('', 2222))
-	socket_query.listen(10)
+	socket_query.bind(('localhost', listening_port))
+	socket_query.listen(1) # One client at a time
 	while True:
 		client, info = socket_query.accept()
-		print("{0} connected".format(info))
+		print("{0}:{1} connected".format(info[0], info[1]))
 		# maybe a while true for client.recv is a good idea.
-		query = client.recv(255)
-		fifo_query.put(query)
-
-
-
+		empty_query = False
+		while not empty_query: # While the socket is still open
+			query = client.recv(1024)
+			fifo_query.put(query)
+			if query == b"":
+				empty_query = True
+		print("Close {0}:{1} connection".format(info[0], info[1]))
+		client.close()
 
 if __name__ == "__main__":
+	try:
+		listening_port = int(sys.argv[1])
+		forwarding_port = int(sys.argv[2])
+	except IndexError:
+		listening_port = 2222
+		forwarding_port = 8000
+
 	# Todo when thread quit, close cleany the socket.
-	# Add management of the response.
 	fifo_query = Queue()
 
 	httpd_thread = threading.Thread(None, httpd, name="HTTPD-thread")
