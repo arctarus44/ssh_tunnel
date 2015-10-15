@@ -34,7 +34,9 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 		self.send_response(200)
 		self.send_header(CONTENT_TYPE, TXT_HTML)
 		self.end_headers()
+		print("Waiting for some data from the fifo")
 		query = base64.b64encode(fifo_query.get())
+		print("Sending data")
 		self.wfile.write(query)
 
 	def do_POST(self):
@@ -93,7 +95,7 @@ if __name__ == "__main__":
 	fifo_query = Queue()
 
 	httpd_thread = threading.Thread(None, httpd, name="HTTPD-thread")
-	httpd_thread.start()
-
 	sshd_thread = threading.Thread(None, listend, name="Listend-thread")
+
+	httpd_thread.start()
 	sshd_thread.start()

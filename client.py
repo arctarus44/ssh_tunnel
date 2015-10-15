@@ -26,7 +26,10 @@ def forward():
 
 	print("Forward thread started")
 
-	forward_socket.connect((ssh_server, ssh_port))
+
+
+	connected = False
+
 	while True:
 		opened_url = urllib.request.urlopen(url)
 		print(url + " -> " + str(opened_url.code))
@@ -34,9 +37,9 @@ def forward():
 			content = opened_url.read()
 			request = base64.b64decode(content)
 			print(request)
+			if connected == False:
+				forward_socket.connect((ssh_server, ssh_port))
 			forward_socket.send(request)
-		else:
-			sleep(0.1)
 	forward_socket.close() # usefull? Maybe
 
 def post():
@@ -46,15 +49,17 @@ def post():
 
 	while True:
 		response = forward_socket.recv(1024)
+		print(response)
 		headers = {'Content-Type': 'text/html' }
 		params = {'payload': base64.b64encode(response)}
 		client = http.client.HTTPConnection(website)
 		url_params = urllib.parse.urlencode(params)
+		print("ZERTYUIOP")
 		client.request('POST', 'stelar/login.aspx', url_params, headers)
 		r = client.getresponse()
 		print(r.code)
 
-		sleep(0.1)
+		# sleep(0.1)
 
 	tunnel_socket.close()
 
@@ -87,7 +92,12 @@ if __name__ == "__main__":
 
 
 	forw_thread = threading.Thread(None, forward, name="Forward-thread")
-	forw_thread.start()
-
 	re_thread = threading.Thread(None, post, name="Reply-thread")
-	re_thread.start()
+
+	try:
+		forw_thread.start()
+		re_thread.start()
+	except:
+		forward_socket.close()
+		tunnel_socket.close()
+		raise
