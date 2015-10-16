@@ -8,9 +8,8 @@ from time import sleep
 import http.client
 import urllib.request
 
-client = None
-tunnel_socket = None
-forward_socket = None
+tunnel_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+forward_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
 ssh_server = "localhost"
 ssh_port = 22
@@ -18,51 +17,50 @@ http_server = "localhost"
 http_port = 8000
 
 website = "{0}:{1}"
-url = "http://{0}/random/value"
+ressource = "/random/value"
+url = "http://{0}" + ressource
+
+queries = Queue()
+replies = Queue()
 
 
-def forward():
-	""" each second, a GET package is send to the server """
-
-	print("Forward thread started")
-
-
-
-	connected = False
-
+def receive_queries():
+	"""Receive querie from the other side of the HTTP tunnel."""
+	print('Receive_queries thread started')
 	while True:
 		opened_url = urllib.request.urlopen(url)
-		print(url + " -> " + str(opened_url.code))
 		if opened_url.code == 200:
 			content = opened_url.read()
-			request = base64.b64decode(content)
-			print(request)
-			if connected == False:
-				forward_socket.connect((ssh_server, ssh_port))
-			forward_socket.send(request)
-	forward_socket.close() # usefull? Maybe
+			query = base64.b64decode(content)
+			print(query)
+			queries.put(query)
 
-def post():
-	"""take reply of server and use a socket (sockSshIN) to redirect on 22 port """
-	print("Reply thread started")
-	tunnel_socket.connect((http_server, http_port))
-
+def forward_queries():
+	"""Forward queries to the designated server."""
+	print('Forward_queries thread started')
+	first_query = True
 	while True:
-		response = forward_socket.recv(1024)
-		print(response)
+		query = queries.get()
+		if first_query:
+			forward_socket.connect((ssh_server, ssh_port))
+		forward_socket.send(query)
+
+
+def receive_replies():
+	"""Receive replies from the designated server"""
+	print('Receive_replies thread started')
+	pass
+
+def forward_replies():
+	"""Forward replies to the other side of the HTTP tunnel."""
+	print('Forward_replies thread started')
+	while True:
+		reply = replies.get()
 		headers = {'Content-Type': 'text/html' }
-		params = {'payload': base64.b64encode(response)}
+		params = {'payload': base64.b64encode(reply)}
 		client = http.client.HTTPConnection(website)
 		url_params = urllib.parse.urlencode(params)
-		print("ZERTYUIOP")
-		client.request('POST', 'stelar/login.aspx', url_params, headers)
-		r = client.getresponse()
-		print(r.code)
-
-		# sleep(0.1)
-
-	tunnel_socket.close()
-
+		client.request(ressource)
 
 
 if __name__ == "__main__":
@@ -85,19 +83,21 @@ if __name__ == "__main__":
 	except IndexError:
 		print("Default value for ssh port")
 
-	# """ FIFO stores HTTP request """
-	# ssh_query = Queue()
-	forward_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-	tunnel_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+	r_queries_thread = threading.Thread(None, receive_queries,
+										name="Receive queries thread")
+	f_queries_thread = threading.Thread(None, forward_queries,
+										name="Forward queries thread")
+	r_replies_thread = threading.Thread(None, receive_replies,
+										name="Receive replies thread")
+	f_replies_thread = threading.Thread(None, forward_replies,
+										name="Forward replies thread")
 
-
-	forw_thread = threading.Thread(None, forward, name="Forward-thread")
-	re_thread = threading.Thread(None, post, name="Reply-thread")
 
 	try:
-		forw_thread.start()
-		re_thread.start()
+		r_queries_thread.start()
+		f_queries_thread.start()
+		r_replies_thread.start()
+		f_replies_thread.start()
 	except:
 		forward_socket.close()
-		tunnel_socket.close()
 		raise

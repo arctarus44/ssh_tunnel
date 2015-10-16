@@ -31,29 +31,31 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 	def do_GET(self):
 		"""Respond to a GET request."""
 		global fifo_query
-		self.send_response(200)
-		self.send_header(CONTENT_TYPE, TXT_HTML)
-		self.end_headers()
-		print("Waiting for some data from the fifo")
-		query = base64.b64encode(fifo_query.get())
-		print("Sending data")
-		self.wfile.write(query)
+		if client == None:
+			self.send_response(503)
+			self.send_header(CONTENT_TYPE, TXT_HTML)
+			self.end_headers()
+		else:
+			self.send_response(200)
+			self.send_header(CONTENT_TYPE, TXT_HTML)
+			self.end_headers()
+			print("Waiting for some data from the fifo")
+			query = base64.b64encode(fifo_query.get())
+			print("Sending data")
+			self.wfile.write(query)
 
 	def do_POST(self):
 		"""Manage to a POST request."""
 		global client
 		length = int(self.headers['Content-Length'])
 		data = urllib.parse.parse_qs(self.rfile.read(length).decode('utf-8'))
-		if client == None:
-			# todo think something clever when no client is connected
-			print("TODO")
-		else:
-			payload = data[PAYLOAD][0]
-			client.send(base64.b64decode(payload))
-			self.send_response(200)
-			self.send_header(CONTENT_TYPE, TXT_HTML)
-			self.end_headers()
-			self.wfile.write(MSG_200)
+		payload = data[PAYLOAD][0]
+		print(payload)
+		client.send(base64.b64decode(payload))
+		self.send_response(200)
+		self.send_header(CONTENT_TYPE, TXT_HTML)
+		self.end_headers()
+		self.wfile.write(MSG_200)
 
 
 def httpd():
