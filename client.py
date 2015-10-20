@@ -37,13 +37,13 @@ def receive_queries():
 			opened_url = urllib.request.urlopen(url)
 		except urllib.error.HTTPError as http_error:
 			if http_error.getcode() == 503:
-				time_to_sleep = 1
+				time_to_sleep = 2
 				logging.debug("Nothing to get from the other side of the tunnel")
 			else:
 				raise
 		else:
 			if opened_url.code == 200:
-				time_to_sleep = 0.1
+				time_to_sleep = 0.4
 				content = opened_url.read()
 				query = base64.b64decode(content)
 				logging.debug("Receive query %s", query)
