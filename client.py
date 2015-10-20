@@ -15,8 +15,6 @@ forward_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
 ssh_server = "localhost"
 ssh_port = 22
-http_server = "localhost"
-http_port = 8000
 
 website = "{0}:{1}"
 ressource = "/random/value"
@@ -38,12 +36,15 @@ def receive_queries():
 		except urllib.error.HTTPError as http_error:
 			if http_error.getcode() == 503:
 				time_to_sleep = 2
+				logging.debug("No client connected for the moment")
+			elif http_error.getcode() == 500:
+				time_to_sleep = 0.5
 				logging.debug("Nothing to get from the other side of the tunnel")
 			else:
 				raise
 		else:
 			if opened_url.code == 200:
-				time_to_sleep = 0.4
+				time_to_sleep = 0.1
 				content = opened_url.read()
 				query = base64.b64decode(content)
 				logging.debug("Receive query %s", query)
@@ -104,12 +105,14 @@ if __name__ == "__main__":
 	try:
 		ssh_server = sys.argv[3]
 	except IndexError:
-		pass					# add some log
+		logging.info("Default value for the and ssh server address (%s).",
+					 ssh_server)
 
 	try:
 		ssh_port = int(sys.argv[4])
 	except IndexError:
-		pass					# add some log
+		logging.info("Default value for the and ssh server port (%s).",
+					 ssh_port)
 
 	r_queries_thread = threading.Thread(None, receive_queries,
 										name="Receive_queries thread")

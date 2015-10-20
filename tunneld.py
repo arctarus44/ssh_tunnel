@@ -8,6 +8,9 @@ import urllib
 import argparse
 import logging
 
+# todo in case of inactivity in the other side of the tunnel, clean the
+# queries and replies fifo, close the client socket.
+
 CONTENT_TYPE = "Content-type"
 TXT_HTML = "text/html"
 PAYLOAD = "payload"
@@ -22,6 +25,7 @@ queries = Queue()
 replies = Queue()
 client_event = threading.Event()
 client_event.clear()
+client_close = True
 
 #########
 # Utils #
@@ -38,18 +42,25 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 			self.send_header(CONTENT_TYPE, TXT_HTML)
 			self.end_headers()
 		else:
-			self.send_response(200)
-			self.send_header(CONTENT_TYPE, TXT_HTML)
-			self.end_headers()
 			try:
 				query = base64.b64encode(queries.get(block = False))
-				logging.info("Forwarding the query :%s", base64.b64decode(query))
 			except Empty:
-				logging.debug("Nothing to forward at this moment.")
-				self.send_response(503)
+				if client_close:
+					logging.debug("Client close and nothing in the queries fifo.")
+					self.send_response(503)
+					self.send_header(CONTENT_TYPE, TXT_HTML)
+					self.end_headers()
+				else:
+					logging.debug("Nothing to forward at this moment.")
+					self.send_response(500)
+					self.send_header(CONTENT_TYPE, TXT_HTML)
+					self.end_headers()
+			else:
+				logging.info("Forwarding the query :%s", base64.b64decode(query))
+				self.send_response(200)
 				self.send_header(CONTENT_TYPE, TXT_HTML)
 				self.end_headers()
-			self.wfile.write(query)
+				self.wfile.write(query)
 
 	def do_POST(self):
 		"""Manage to a POST request."""
@@ -79,12 +90,14 @@ def httpd():
 						 TunnelHTTPHandler)
 	httpd.serve_forever()
 
-def forward_queries():
-	"""Forward queries into the HTTP tunnel."""
+def receive_queries():
+	"""Received queries from the client."""
+	global client_close
 	global client
 	logging.info("Starting the forward queries thread.")
 
 	while True:
+		client_close = False
 		client, info = forward_socket.accept()
 		logging.info("{0}:{1} connected".format(info[0], info[1]))
 		client_event.set()
@@ -95,6 +108,9 @@ def forward_queries():
 			queries.put(query)
 			query = client.recv(2048)
 
+		logging.debug("b'' received")
+		queries.put(query)
+		client_close = True
 		client_event.clear()
 		client.close()
 		logging.info("Close %s:%s connection", info[0], info[1])
@@ -103,16 +119,17 @@ def forward_queries():
 def forward_replies():
 	"""Forward replies received from the HTTP tunnel to the client."""
 	logging.info("Starting the forward replies thread.")
-	logging.debug("Freeze")
+	logging.debug("Freeze forwarding replies")
 	client_event.wait()
-	logging.debug("Unfreeze")
+	logging.debug("Unfreeze forwarding replies")
 	while True:
+		logging.debug("Waiting to forward a reply")
 		reply = replies.get()
 		logging.debug("Sending the following reply : %s", reply)
-		client.send(base64.decode(reply))
-		logging.debug("Freeze")
+		client.send(reply)
+		logging.debug("Freeze forwarding replies")
 		client_event.wait()
-		logging.debug("Unfreeze")
+		logging.debug("Unfreeze forwarding replies")
 
 
 if __name__ == "__main__":
@@ -133,7 +150,7 @@ if __name__ == "__main__":
 	forward_socket.listen(1) # One client at a time
 
 	httpd_thread = threading.Thread(None, httpd, name="HTTPD-thread")
-	forward_queries_thread = threading.Thread(None, forward_queries, name="Forward-Queries-thread")
+	forward_queries_thread = threading.Thread(None, receive_queries, name="Receive-Queries-thread")
 	forward_replies_thread = threading.Thread(None, forward_replies, name="Forward-Replies-thread")
 
 	httpd_thread.start()
