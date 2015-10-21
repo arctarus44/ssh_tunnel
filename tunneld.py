@@ -18,6 +18,7 @@ MSG_200 = b"Thank you <3"
 
 listening_port = 2222
 forwarding_port = 8000
+http_address = localhost
 
 forward_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 client = None
@@ -138,12 +139,17 @@ if __name__ == "__main__":
 	try:
 		listening_port = int(sys.argv[1])
 	except IndexError:
-		logging.info("Default value for the listening port(%s).",
+		logging.info("Default value for the listening port (%s).",
 					 listening_port)
 	try:
 		forwarding_port = int(sys.argv[2])
 	except IndexError:
-		logging.info("Default value for the and forwarding port(%s)",
+		logging.info("Default value for the forwarding port (%s)",
+					 forwarding_port)
+	try:
+		http_address = int(sys.argv[3])
+	except IndexError:
+		logging.info("Default value for the http address (%s)",
 					 forwarding_port)
 
 	forward_socket.bind(('localhost', listening_port))
