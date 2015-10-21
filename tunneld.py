@@ -147,7 +147,7 @@ if __name__ == "__main__":
 		logging.info("Default value for the forwarding port (%s)",
 					 forwarding_port)
 	try:
-		http_address = int(sys.argv[3])
+		http_address = sys.argv[3]
 	except IndexError:
 		logging.info("Default value for the http address (%s)",
 					 forwarding_port)
