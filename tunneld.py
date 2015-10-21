@@ -18,7 +18,7 @@ MSG_200 = b"Thank you <3"
 
 listening_port = 2222
 forwarding_port = 8000
-http_address = localhost
+http_address = "localhost"
 
 forward_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 client = None
