@@ -128,8 +128,8 @@ def forward_replies():
 	logging.info("Starting the forward replies thread.")
 	client_event.wait()
 	while True:
-		reply = replies.get()
 		logging.info("New reply to forward")
+		reply = replies.get()
 		logging.debug("Sending the following reply : %s", reply)
 		client.send(reply)
 		client_event.wait()
