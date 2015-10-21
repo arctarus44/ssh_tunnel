@@ -1,3 +1,5 @@
+"""Implement the client side of the HTTP tunnel."""
+
 import socket
 import sys
 import base64
@@ -10,8 +12,8 @@ import urllib.request
 import urllib.error
 import logging
 
-tunnel_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-forward_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+tunnel_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+forward_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 ssh_server = "localhost"
 ssh_port = 22
@@ -36,18 +38,20 @@ def receive_queries():
 		except urllib.error.HTTPError as http_error:
 			if http_error.getcode() == 503:
 				time_to_sleep = 2
-				logging.debug("No client connected for the moment")
+				logging.info("No client connected for the moment.")
 			elif http_error.getcode() == 500:
 				time_to_sleep = 0.5
-				logging.debug("Nothing to get from the other side of the tunnel")
+				logging.info("Nothing to get from the other side of the tunnel.")
 			else:
+				logging.exception(http_error)
 				raise
 		else:
 			if opened_url.code == 200:
+				logging.info("New query to forward to the local server.")
 				time_to_sleep = 0.1
 				content = opened_url.read()
 				query = base64.b64decode(content)
-				logging.debug("Receive query %s", query)
+				logging.debug("Received query : %s", query)
 				queries.put(query)
 		sleep(time_to_sleep)
 
@@ -57,17 +61,14 @@ def forward_queries():
 	first_query = True
 	while True:
 		query = queries.get()
-		logging.debug("New query to forward obtained from the queries fifo")
+		logging.info("New query to forward obtained from the queries fifo")
 		if first_query:
 			logging.info("First connection, opening the connection to the \
 server")
 			forward_socket.connect((ssh_server, ssh_port))
 			first_query = False
-			logging.info("First connection opened, unfreeze the reception \
-of replies")
 			listening_event.set()
-		logging.debug("Forward query \"%s\" to %s:%s", query, ssh_server,
-					  ssh_port)
+		logging.debug("Forward query : %s", query)
 		forward_socket.send(query)
 
 
@@ -75,9 +76,10 @@ def receive_replies():
 	"""Receive replies from the designated server."""
 	logging.info('Receive_replies thread started')
 	listening_event.wait()
-	logging.info("Starting to receive replies")
+	logging.debug("Starting to receive replies")
 	while True:
 		reply = forward_socket.recv(2048)
+		logging.info("New reply received.")
 		logging.debug("New reply received : %s", reply)
 		replies.put(reply)
 
@@ -86,8 +88,8 @@ def forward_replies():
 	logging.info('Forward_replies thread started')
 	while True:
 		reply = replies.get()
-		logging.debug("New reply to forward obtained from the replies fifo")
-		headers = {'Content-Type': 'text/html' }
+		logging.info("New reply to forward obtained from the replies fifo")
+		headers = {'Content-Type': 'text/html'}
 		params = {'payload': base64.b64encode(reply)}
 		client = http.client.HTTPConnection(website)
 		logging.debug("Forwarding the reply : %s", reply)
@@ -100,28 +102,28 @@ if __name__ == "__main__":
 	website = website.format(http_server, http_port)
 	url = url.format(website)
 	logging.basicConfig(format='%(levelname)8s:%(asctime)s:%(funcName)20s():%(message)s',
-						filename='client.log',level=logging.DEBUG)
+	                    filename='client.log', level=logging.DEBUG)
 
 	try:
 		ssh_server = sys.argv[3]
 	except IndexError:
 		logging.info("Default value for the and ssh server address (%s).",
-					 ssh_server)
+		             ssh_server)
 
 	try:
 		ssh_port = int(sys.argv[4])
 	except IndexError:
 		logging.info("Default value for the and ssh server port (%s).",
-					 ssh_port)
+		             ssh_port)
 
 	r_queries_thread = threading.Thread(None, receive_queries,
-										name="Receive_queries thread")
+	                                    name="Receive_queries thread")
 	f_queries_thread = threading.Thread(None, forward_queries,
-										name="Forward_queries thread")
+	                                    name="Forward_queries thread")
 	r_replies_thread = threading.Thread(None, receive_replies,
-										name="Receive_replies thread")
+	                                    name="Receive_replies thread")
 	f_replies_thread = threading.Thread(None, forward_replies,
-										name="Forward_replies thread")
+	                                    name="Forward_replies thread")
 
 
 	try:
