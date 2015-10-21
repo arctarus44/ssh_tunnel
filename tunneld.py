@@ -87,7 +87,7 @@ def httpd():
 	""" Start the http server and made it server forever."""
 	logging.info("Starting the HTTP server thread")
 	server_class = http.server.HTTPServer
-	httpd = server_class(("localhost", forwarding_port),
+	httpd = server_class((http_address, forwarding_port),
 						 TunnelHTTPHandler)
 	httpd.serve_forever()
 
