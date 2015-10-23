@@ -25,11 +25,15 @@ server_port = 22
 # The socket used to forward queries to the local server
 forward_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+# event used to prevent reading on a closed socket
+socket_event = threading.Event()
+socket_event.clear()
+
 def receive_queries():
 	"""Receive a query from the other side of the HTTP tunnel and send it
 	to the local server."""
 
-	logging.info("Receive query thread started")
+	logging.info("Receive queries thread started.")
 
 	# the time the thread have to sleep before launching a new query
 	time_to_sleep = 2
@@ -43,7 +47,7 @@ def receive_queries():
 			error_code = http_error.getcode()
 
 			if error_code == 404: # no client connected on the other side
-				logging.debug("No client connected for the moment.")
+				logging.debug("No distant client connected for the moment.")
 				time_to_sleep = SLEEP_NO_CLT
 
 			elif error_code == 500: # no data on the other side
@@ -51,11 +55,12 @@ def receive_queries():
 				time_to_sleep = SLEEP_NO_DATA
 
 			elif error_code == 503:
-				logging.debug("Client disconnected.")
+				logging.info("Client disconnected.")
 				time_to_sleep = SLEEP_NO_CLT
-				forward_socket.close()
-				first_forward = True # otherwize, the socket will not be opened again
-				# add a mechanisme to prevent reading from the closed socket
+				socket_event.set()
+				forward_socket.clear()
+				logging.info("Socket closed.")
+				first_forward = True # otherwise, the socket will not be opened again
 
 			else:
 				logging.error(http_error)
@@ -70,10 +75,14 @@ def receive_queries():
 
 				if first_forward:
 					forward_socket.connect((local_server, server_port))
+					socket_event.set()
+					logging.info("Connected socket to %s:%s.", local_server,
+					             server_port)
 					first_forward = False
 				forward_socket.send(query)
 		logging.debug("Go to sleep for %ss", time_to_sleep)
 		sleep(time_to_sleep)
+
 
 
 if __name__ == "__main__":
