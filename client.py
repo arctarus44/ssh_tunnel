@@ -16,6 +16,7 @@ SLEEP_DATA = 0.05
 PROTOCOL = "http://"
 
 url = None
+website = "{0}:{1}"
 local_server = "localhost"
 server_port = 22
 
@@ -80,6 +81,32 @@ def receive_queries():
 		logging.debug("Go to sleep for %ss", time_to_sleep)
 		sleep(time_to_sleep)
 
+def forward_replies():
+	"""Forward replies to the other side of the HTTP tunnel."""
+	logging.info("Forward replies thread started.")
+
+	empty_reply = False
+
+	while True:
+		socket_event.wait()
+		reply = forward_socket.recv(2048)
+
+		if empty_reply:
+			first_empty_reply = False
+			logging.debug("Second empty bytes string read from socket. Break !")
+			break
+
+		if reply == b"":
+			empty_reply = True
+			logging.debug("First empty bytes string read from socket.")
+
+		headers = {'Content-Type': 'text/html'}
+		params = {'payload': base64.b64encode(reply)}
+		client = http.client.HTTPConnection(website)
+		logging.debug("Forwarding the reply : %s", reply)
+		url_params = urllib.parse.urlencode(params)
+		client.request("POST", ressource, url_params, headers)
+
 
 
 if __name__ == "__main__":
@@ -99,6 +126,7 @@ if __name__ == "__main__":
 		             server_port)
 
 	url = "{0}{1}:{2}".format(PROTOCOL, http_server, http_port, "random/value")
+	website = website.format(local_server, server_port)
 
 	logging.basicConfig(format='%(levelname)8s:%(asctime)s:%(funcName)20s():%(message)s',
 	                    filename='client.log', level=logging.DEBUG)

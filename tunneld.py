@@ -41,6 +41,7 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 		"""Manage GET request. Send a request to the other side of the HTTP
 		tunnel."""
 		global fifo_query
+		global client
 		logging.info("New GET request received.")
 		if client == None:
 			logging.debug("No client connected.")
@@ -56,6 +57,7 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 					self.send_response(503)
 					self.send_header(CONTENT_TYPE, TXT_HTML)
 					self.end_headers()
+					client = None
 				else:
 					logging.debug("Nothing to forward at this moment.")
 					self.send_response(500)
