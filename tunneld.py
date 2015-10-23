@@ -43,8 +43,8 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 		global fifo_query
 		logging.info("New GET request received.")
 		if client == None:
-			logging.debug("No query to forward.")
-			self.send_response(503)
+			logging.debug("No client connected.")
+			self.send_response(404)
 			self.send_header(CONTENT_TYPE, TXT_HTML)
 			self.end_headers()
 		else:
@@ -52,7 +52,7 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 				query = base64.b64encode(queries.get(block=False))
 			except Empty:
 				if client_close:
-					logging.debug("Client close and nothing in the queries fifo.")
+					logging.debug("Client disconnected and nothing in the queries fifo.")
 					self.send_response(503)
 					self.send_header(CONTENT_TYPE, TXT_HTML)
 					self.end_headers()
@@ -104,8 +104,8 @@ def receive_queries():
 	logging.info("Starting the forward queries thread.")
 
 	while True:
-		client_close = False
 		client, info = forward_socket.accept()
+		client_close = False
 		logging.info("%s:%s connected", info[0], info[1])
 		client_event.set()
 		query = client.recv(2048)
@@ -117,10 +117,10 @@ def receive_queries():
 
 		logging.debug("b'' received")
 		queries.put(query)
-		client_close = True
-		client_event.clear()
-		client.close()
 		logging.info("Close %s:%s connection", info[0], info[1])
+		client_close = True
+		client.close()
+		client_event.clear()
 
 
 def forward_replies():
@@ -152,7 +152,7 @@ if __name__ == "__main__":
 		http_address = sys.argv[3]
 	except IndexError:
 		logging.info("Default value for the http address (%s)",
-		             forwarding_port)
+		             http_address)
 
 	forward_socket.bind(('localhost', listening_port))
 	forward_socket.listen(1) # One client at a time
