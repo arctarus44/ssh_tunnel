@@ -15,10 +15,7 @@ SLEEP_NO_DATA = 0.5
 SLEEP_DATA = 0.05
 PROTOCOL = "http://"
 
-# clean this shit
-website = "{0}:{1}"
-ressource = "/random/value"
-url = "http://{0}" + ressource
+url = None
 local_server = "localhost"
 server_port = 22
 
@@ -88,7 +85,21 @@ def receive_queries():
 if __name__ == "__main__":
 	http_server = sys.argv[1]
 	http_port = int(sys.argv[2])
+
+	try:
+		local_server = sys.argv[3]
+	except IndexError:
+		logging.info("Using default value for the local server address (%s).",
+		             ssh_server)
+
+	try:
+		server_port = int(sys.argv[4])
+	except IndexError:
+		logging.info("Using default value for the local server port (%s).",
+		             server_port)
+
 	url = "{0}{1}:{2}".format(PROTOCOL, http_server, http_port, "random/value")
+
 	logging.basicConfig(format='%(levelname)8s:%(asctime)s:%(funcName)20s():%(message)s',
 	                    filename='client.log', level=logging.DEBUG)
 
