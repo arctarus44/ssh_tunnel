@@ -8,6 +8,7 @@ import base64
 import urllib.request
 import urllib.error
 from time import sleep
+import http.client
 
 
 SLEEP_NO_CLT = 2
@@ -18,6 +19,7 @@ PROTOCOL = "http://"
 url = None
 website = "{0}:{1}"
 local_server = "localhost"
+ressource = "/random/value"
 server_port = 22
 
 # The socket used to forward queries to the local server
@@ -30,12 +32,12 @@ socket_event.clear()
 def receive_queries():
 	"""Receive a query from the other side of the HTTP tunnel and send it
 	to the local server."""
+	global forward_socket
 
 	logging.info("Receive queries thread started.")
 
 	# the time the thread have to sleep before launching a new query
 	time_to_sleep = 2
-
 	first_forward = True
 
 	while True:
@@ -52,11 +54,12 @@ def receive_queries():
 				logging.debug("No data to forward to the local server.")
 				time_to_sleep = SLEEP_NO_DATA
 
-			elif error_code == 503:
+			elif error_code == 503: # The client had just disconnected.
 				logging.info("Client disconnected.")
 				time_to_sleep = SLEEP_NO_CLT
-				socket_event.set()
-				forward_socket.clear()
+				socket_event.clear()
+				forward_socket.close()
+				forward_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 				logging.info("Socket closed.")
 				first_forward = True # otherwise, the socket will not be opened again
 
@@ -73,41 +76,33 @@ def receive_queries():
 
 				if first_forward:
 					forward_socket.connect((local_server, server_port))
-					socket_event.set()
 					logging.info("Connected socket to %s:%s.", local_server,
 					             server_port)
+					logging.debug("Socket event unlocked")
+					socket_event.set()
 					first_forward = False
 				forward_socket.send(query)
 		logging.debug("Go to sleep for %ss", time_to_sleep)
 		sleep(time_to_sleep)
 
+
 def forward_replies():
 	"""Forward replies to the other side of the HTTP tunnel."""
 	logging.info("Forward replies thread started.")
-
+	socket_event.wait()
 	empty_reply = False
 
 	while True:
+		logging.debug("Forward replies thread locked.")
 		socket_event.wait()
+		logging.debug("Forward replies thread unlocked.")
 		reply = forward_socket.recv(2048)
-
-		if empty_reply:
-			first_empty_reply = False
-			logging.debug("Second empty bytes string read from socket. Break !")
-			break
-
-		if reply == b"":
-			empty_reply = True
-			logging.debug("First empty bytes string read from socket.")
-
 		headers = {'Content-Type': 'text/html'}
 		params = {'payload': base64.b64encode(reply)}
 		client = http.client.HTTPConnection(website)
-		logging.debug("Forwarding the reply : %s", reply)
 		url_params = urllib.parse.urlencode(params)
+		logging.debug("Forwarding replies : %s.", params["payload"])
 		client.request("POST", ressource, url_params, headers)
-
-
 
 if __name__ == "__main__":
 	http_server = sys.argv[1]
@@ -125,17 +120,20 @@ if __name__ == "__main__":
 		logging.info("Using default value for the local server port (%s).",
 		             server_port)
 
-	url = "{0}{1}:{2}".format(PROTOCOL, http_server, http_port, "random/value")
-	website = website.format(local_server, server_port)
+	url = "{0}{1}:{2}".format(PROTOCOL, http_server, http_port, ressource)
+	website = website.format(local_server, http_port)
 
 	logging.basicConfig(format='%(levelname)8s:%(asctime)s:%(funcName)20s():%(message)s',
 	                    filename='client.log', level=logging.DEBUG)
 
 	r_queries_thread = threading.Thread(None, receive_queries,
 	                                    name="Receive_queries thread")
+	f_replies_thread = threading.Thread(None, forward_replies,
+	                                    name="Forward_relies thread")
 
 	try:
 		r_queries_thread.start()
+		f_replies_thread.start()
 	except:
 		logging.error(sys.exc_info()[0])
 		forward_socket.close()

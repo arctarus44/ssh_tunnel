@@ -42,7 +42,7 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 		tunnel."""
 		global fifo_query
 		global client
-		logging.info("New GET request received.")
+		logging.debug("New GET request received.")
 		if client == None:
 			logging.debug("No client connected.")
 			self.send_response(404)
@@ -130,8 +130,8 @@ def forward_replies():
 	logging.info("Starting the forward replies thread.")
 	client_event.wait()
 	while True:
-		logging.info("New reply to forward")
 		reply = replies.get()
+		logging.info("New reply to forward")
 		logging.debug("Sending the following reply : %s", reply)
 		client.send(reply)
 		client_event.wait()
@@ -160,8 +160,12 @@ if __name__ == "__main__":
 	forward_socket.listen(1) # One client at a time
 
 	httpd_thread = threading.Thread(None, httpd, name="HTTPD-thread")
-	forward_queries_thread = threading.Thread(None, receive_queries, name="Receive-Queries-thread")
-	forward_replies_thread = threading.Thread(None, forward_replies, name="Forward-Replies-thread")
+	forward_queries_thread = threading.Thread(None,
+	                                          receive_queries,
+	                                          name="Receive-Queries-thread")
+	forward_replies_thread = threading.Thread(None,
+	                                          forward_replies,
+	                                          name="Forward-Replies-thread")
 
 	httpd_thread.start()
 	forward_queries_thread.start()
