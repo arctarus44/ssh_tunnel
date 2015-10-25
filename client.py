@@ -90,7 +90,6 @@ def forward_replies():
 	"""Forward replies to the other side of the HTTP tunnel."""
 	logging.info("Forward replies thread started.")
 	socket_event.wait()
-	empty_reply = False
 
 	while True:
 		logging.debug("Forward replies thread locked.")
@@ -112,7 +111,7 @@ if __name__ == "__main__":
 		local_server = sys.argv[3]
 	except IndexError:
 		logging.info("Using default value for the local server address (%s).",
-		             ssh_server)
+		             local_server)
 
 	try:
 		server_port = int(sys.argv[4])
@@ -120,7 +119,7 @@ if __name__ == "__main__":
 		logging.info("Using default value for the local server port (%s).",
 		             server_port)
 
-	url = "{0}{1}:{2}".format(PROTOCOL, http_server, http_port, ressource)
+	url = "{0}{1}:{2}{3}".format(PROTOCOL, http_server, http_port, ressource)
 	website = website.format(local_server, http_port)
 
 	logging.basicConfig(format='%(levelname)8s:%(asctime)s:%(funcName)20s():%(message)s',
