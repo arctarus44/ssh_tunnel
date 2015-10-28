@@ -104,6 +104,9 @@ def receive_queries():
 			else:
 				logging.error(http_error)
 
+		except urllib.error.URLError:
+			pass				# The client must run at all costs
+
 		else:
 			if opened_url.code == 200:
 				time_to_sleep = SLEEP_DATA
@@ -163,7 +166,7 @@ if __name__ == "__main__":
 	website = website.format(local_server, http_port)
 
 	logging.basicConfig(format='%(levelname)8s:%(asctime)s:%(funcName)20s():%(message)s',
-	                    filename='client.log', level=logging.DEBUG)
+	                    filename='client.log', level=logging.INFO)
 
 	r_queries_thread = threading.Thread(None, receive_queries,
 	                                    name="Receive_queries thread")
