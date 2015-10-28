@@ -4,3 +4,4 @@ bin
 include
 lib
 __pycache__
+pip-selfcheck.json
