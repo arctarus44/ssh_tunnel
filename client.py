@@ -29,6 +29,11 @@ forward_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 socket_event = threading.Event()
 socket_event.clear()
 
+# todo add a user agent to every POST and GET queries
+# todo add the obfuscation
+# todo find some specific value for time_of_sleep to keep the number of
+# queries/replies per second the lowest possible.
+
 def receive_queries():
 	"""Receive a query from the other side of the HTTP tunnel and send it
 	to the local server."""

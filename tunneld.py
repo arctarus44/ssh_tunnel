@@ -29,6 +29,8 @@ client_event = threading.Event()
 client_event.clear()
 client_close = True
 
+# todo add the use of the obfuscation class
+
 #########
 # Utils #
 #########
