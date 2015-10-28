@@ -41,7 +41,7 @@ class HTMLGenerator:
 		page += self.__random_body()
 		page += '</body></html>'
 		self.__payload_used = 0
-		return page
+		return page.encode()
 
 	def __random_body(self):
 		"""Generate a new random body."""
@@ -72,7 +72,7 @@ class HTMLGenerator:
 	def __gen_inline(self):
 		"""Generate a new inline block with __MARKER attribute."""
 		inline = "<" + self.__marker + ">"
-		inline += self.__payload[self.__payload_used]
+		inline += self.__payload[self.__payload_used].decode()
 		self.__payload_used += 1
 		inline += "</" + self.__marker + ">"
 		return inline
@@ -83,12 +83,13 @@ class Obfuscate:
 	used by the proxy."""
 
 	__url_img = [".jpg", ".gif", ".png"]
-	__url_text = ["toto.html", "fooo.html", "barr.php"]
+	__url_text = ["toto.html", "fooo.html", "barrr.php"]
 	__end_url = __url_img + __url_text # end of an url
+	__end_url = __url_text # end of an url
 	__element = ["span", "a", "i"] # every markers used to store data
 	__GIF = "gif"
 	__JPG = "jpg"
-	__PNG = "PNG"
+	__PNG = "png"
 	__headers = {__GIF: b'GIF89a',
 	             __JPG: b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00' +
 	                    b'\x01\x00\x01\x00\x00\xff\xfe\x00;CREATOR: ' +
@@ -119,7 +120,7 @@ class Obfuscate:
 	def obfuscate(self, url, data):
 		"""Obfuscate data using url to determine wich kind of obfuscation to
 		used."""
-		if url[-3:] in self.__url_img:
+		if url[-4:] in self.__url_img:
 			return self.__obfuscate_image(url, data)
 		if url[-9:] in self.__url_text:
 			return self.__obfuscate_text(url, data)
@@ -128,7 +129,7 @@ class Obfuscate:
 	def deobfuscate(self, url, data):
 		"""Deobfuscate data using url to determine wich kind of
 		deobfuscation to use."""
-		if url[-3:] in self.__url_img:
+		if url[-4:] in self.__url_img:
 			return self.__deobfuscate_image(url, data)
 		if url[-9:] in self.__url_text:
 			return self.__deobfuscate_text(url, data)

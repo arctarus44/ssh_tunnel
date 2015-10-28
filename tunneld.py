@@ -32,8 +32,6 @@ client_close = True
 
 obfuscate = Obfuscate()
 
-# todo add the use of the obfuscation class
-
 #########
 # Utils #
 #########
@@ -72,7 +70,7 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 				self.send_response(200)
 				self.send_header(CONTENT_TYPE, TXT_HTML)
 				self.end_headers()
-				content = obfuscate.obfuscate(self.path, query)
+				content = obfuscate.obfuscate(str(self.path), query)
 				self.wfile.write(content)
 
 	def do_POST(self):

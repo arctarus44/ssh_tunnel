@@ -9,6 +9,7 @@ import urllib.request
 import urllib.error
 from time import sleep
 from random import choice
+from obfuscate import Obfuscate
 import http.client
 
 
@@ -17,7 +18,7 @@ SLEEP_NO_DATA = 0.5
 SLEEP_DATA = 0.05
 PROTOCOL = "http://"
 
-url = None
+url = "{0}{1}:{2}/"
 website = "{0}:{1}"
 local_server = "localhost"
 ressource = "/random/value"
@@ -56,7 +57,6 @@ def create_post_header():
 	return request_headers
 
 
-# todo add the obfuscation
 # todo find some specific value for time_of_sleep to keep the number of
 # queries/replies per second the lowest possible.
 
@@ -64,6 +64,7 @@ def receive_queries():
 	"""Receive a query from the other side of the HTTP tunnel and send it
 	to the local server."""
 	global forward_socket
+	global url
 
 	logging.info("Receive queries thread started.")
 
@@ -71,8 +72,13 @@ def receive_queries():
 	time_to_sleep = SLEEP_NO_CLT
 	first_forward = True
 
+	obfuscate = Obfuscate()
+
 	while True:
-		request = urllib.request.Request(url, headers= create_get_header())
+		requested_url = url + obfuscate.random_url()
+
+		request = urllib.request.Request(requested_url,
+		                                 headers = create_get_header())
 		try:
 			opened_url = urllib.request.urlopen(request)
 		except urllib.error.HTTPError as http_error:
@@ -102,7 +108,9 @@ def receive_queries():
 			if opened_url.code == 200:
 				time_to_sleep = SLEEP_DATA
 
-				content = opened_url.read()
+				obfuscated_content = opened_url.read()
+				content = obfuscate.deobfuscate(requested_url,
+				                                obfuscated_content)
 				query = base64.b64decode(content)
 				logging.debug("Received query : %s", query)
 
@@ -151,7 +159,7 @@ if __name__ == "__main__":
 		logging.info("Using default value for the local server port (%s).",
 		             server_port)
 
-	url = "{0}{1}:{2}{3}".format(PROTOCOL, http_server, http_port, ressource)
+	url = url.format(PROTOCOL, http_server, http_port)
 	website = website.format(local_server, http_port)
 
 	logging.basicConfig(format='%(levelname)8s:%(asctime)s:%(funcName)20s():%(message)s',
