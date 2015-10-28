@@ -20,8 +20,16 @@ class HTMLGenerator:
 		"""The marker, will be used as a marker to hide the payload. The payload
 		will be spilt in a list of char.See __SPLIT."""
 		self.__marker = marker
+		nb_equal = 0
+		if payload[-2:] == b"==":
+			payload = payload[:-2]
+			nb_equal = 2
+		if payload[-1:] == b"=":
+			payload = payload[:-1]
+			nb_equal = 1
 		self.__payload = [payload[i:i+self.__SPLIT]
 		                  for i in range(0, len(payload), self.__SPLIT)]
+		self.__payload += [str(nb_equal).encode()]
 		self.__payload_used = 0
 		self.__depth = 1
 
@@ -72,6 +80,9 @@ class HTMLGenerator:
 	def __gen_inline(self):
 		"""Generate a new inline block with __MARKER attribute."""
 		inline = "<" + self.__marker + ">"
+		# if self.__payload_used == len(self.__payload) - 1:
+		# 	inline += str(self.__payload[self.__payload_used]
+		# else:
 		inline += self.__payload[self.__payload_used].decode()
 		self.__payload_used += 1
 		inline += "</" + self.__marker + ">"
@@ -124,7 +135,7 @@ class Obfuscate:
 			return self.__obfuscate_image(url, data)
 		if url[-9:] in self.__url_text:
 			return self.__obfuscate_text(url, data)
-		raise ValueError("No obfuscation scheme for this url.")
+		raise ValueError("No obfuscation scheme for this url {}.".format(url))
 
 	def deobfuscate(self, url, data):
 		"""Deobfuscate data using url to determine wich kind of
@@ -133,7 +144,7 @@ class Obfuscate:
 			return self.__deobfuscate_image(url, data)
 		if url[-9:] in self.__url_text:
 			return self.__deobfuscate_text(url, data)
-		raise ValueError("No deobfuscation scheme for this url.")
+		raise ValueError("No deobfuscation scheme for this url {}.".format(url))
 
 	def __obfuscate_image(self, url, data):
 		file_type = url[-3:]
@@ -157,6 +168,10 @@ class Obfuscate:
 		parser = BeautifulSoup(content, 'html.parser')
 		elements = parser.find_all(marker)
 		data = ""
-		for elt in elements:
+		for elt in elements[:-1]:
 			data += elt.next
+		if int(elements[-1].next) == 2:
+			data += "=="
+		elif int(elements[-1].next) == 1:
+			data += "="
 		return data
