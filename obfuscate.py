@@ -91,8 +91,8 @@ class Obfuscate:
 	__PNG = "PNG"
 	__headers = {__GIF: b'GIF89a',
 	             __JPG: b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00' +
-	                    b'\x01\x00\x01\x00\x00\xff\xfe\x00;' +
-	                    b'CREATOR: gd-jpeg v1.0 (using IJG JPEG v80), quality : 92',
+	                    b'\x01\x00\x01\x00\x00\xff\xfe\x00;CREATOR: ' +
+	                    b'gd-jpeg v1.0 (using IJG JPEG v80), quality : 92',
 	             __PNG: b'\x89PNG\r\n\x1a\n'}
 
 	def __init__(self):
