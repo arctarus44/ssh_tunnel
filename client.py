@@ -56,7 +56,6 @@ def create_post_header():
 	return request_headers
 
 
-# todo add a user agent to every POST and GET queries
 # todo add the obfuscation
 # todo find some specific value for time_of_sleep to keep the number of
 # queries/replies per second the lowest possible.
@@ -69,7 +68,7 @@ def receive_queries():
 	logging.info("Receive queries thread started.")
 
 	# the time the thread have to sleep before launching a new query
-	time_to_sleep = 2
+	time_to_sleep = SLEEP_NO_CLT
 	first_forward = True
 
 	while True:
