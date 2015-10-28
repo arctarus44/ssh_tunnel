@@ -8,6 +8,7 @@ import sys
 import base64
 import urllib
 import logging
+from obfuscate import Obfuscate
 
 # todo in case of inactivity in the other side of the tunnel, clean the
 # queries and replies fifo, close the client socket.
@@ -29,6 +30,8 @@ client_event = threading.Event()
 client_event.clear()
 client_close = True
 
+obfuscate = Obfuscate()
+
 # todo add the use of the obfuscation class
 
 #########
@@ -37,7 +40,6 @@ client_close = True
 class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 	"""This class handle HTTP request in order to send/receive data from/into
 	the HTTP tunnel"""
-
 
 	def do_GET(self):
 		"""Manage GET request. Send a request to the other side of the HTTP
@@ -66,11 +68,12 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 					self.send_header(CONTENT_TYPE, TXT_HTML)
 					self.end_headers()
 			else:
-				logging.info("Forwarding the query :%s", base64.b64decode(query))
+				logging.debug("Forwarding the query :%s", base64.b64decode(query))
 				self.send_response(200)
 				self.send_header(CONTENT_TYPE, TXT_HTML)
 				self.end_headers()
-				self.wfile.write(query)
+				content = obfuscate.obfuscate(self.path, query)
+				self.wfile.write(content)
 
 	def do_POST(self):
 		"""Manage POST request. Extract the payload and put it into
