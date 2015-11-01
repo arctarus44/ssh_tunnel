@@ -104,8 +104,7 @@ def receive_queries():
 			else:
 				logging.error(http_error)
 
-		except urllib.error.URLError as error:
-			logging.error(error)
+		except urllib.error.URLError:
 			pass				# The client must run at all costs
 
 		else:
@@ -154,7 +153,7 @@ if __name__ == "__main__":
 	http_port = int(sys.argv[2])
 
 	logging.basicConfig(format='%(levelname)8s:%(asctime)s:%(funcName)20s():%(message)s',
-	                    filename='client.log', level=logging.DEBUG)
+	                    filename='client.log', level=logging.INFO)
 	try:
 		local_server = sys.argv[3]
 	except IndexError:
