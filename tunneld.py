@@ -8,7 +8,7 @@ import sys
 import base64
 import urllib
 import logging
-from obfuscate import Obfuscate
+import obfuscate as obf
 
 # todo in case of inactivity in the other side of the tunnel, clean the
 # queries and replies fifo, close the client socket.
@@ -30,7 +30,7 @@ client_event = threading.Event()
 client_event.clear()
 client_close = True
 
-obfuscate = Obfuscate()
+obfuscate = obf.Obfuscate()
 
 #########
 # Utils #
@@ -82,6 +82,7 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 		data = urllib.parse.parse_qs(self.rfile.read(length).decode('utf-8'))
 		try:
 			payload = data[PAYLOAD][0]
+			payload = obf.derandomize_payload(payload)
 		except KeyError:
 			logging.debug("No payload")
 		else:

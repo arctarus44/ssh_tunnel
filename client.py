@@ -9,7 +9,7 @@ import urllib.request
 import urllib.error
 from time import sleep
 from random import choice
-from obfuscate import Obfuscate
+import obfuscate as obf
 import http.client
 
 
@@ -72,7 +72,7 @@ def receive_queries():
 	time_to_sleep = SLEEP_NO_CLT
 	first_forward = True
 
-	obfuscate = Obfuscate()
+	obfuscate = obf.Obfuscate()
 
 	while True:
 		requested_url = url + obfuscate.random_url()
@@ -141,7 +141,9 @@ def forward_replies():
 		logging.debug("Forward replies thread unlocked.")
 		reply = forward_socket.recv(2048)
 		headers = create_post_header()
-		params = {'payload': base64.b64encode(reply)}
+		payload = base64.b64encode(reply)
+		payload = obf.randomize_payload(payload)
+		params = {'payload': payload}
 		client = http.client.HTTPConnection(website)
 		url_params = urllib.parse.urlencode(params)
 		logging.debug("Forwarding replies : %s.", params["payload"])

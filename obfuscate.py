@@ -9,9 +9,12 @@ from bs4 import BeautifulSoup
 URL_SIZE = 15
 SUP_SIZE = 5
 
-RANDOM_CHAR = ["_", ",", "@", "*", "_", " ", "[", "]", "{", "}"]
+RANDOM_CHAR = ["_", ",", "@", "*", "_", " ", "[", "]"]
 
 def randomize_payload(payload):
+	# todo randomize the order of the element of the list before adding them
+	# into payload_d
+	print(payload)
 	if type(payload) is bytes:
 		payload = payload.decode()
 	randomize_payload = ""
@@ -19,24 +22,25 @@ def randomize_payload(payload):
 		if random.getrandbits(1) == 0:
 			randomize_payload += random.choice(RANDOM_CHAR)
 		randomize_payload += char
-
-	payload = [randomize_payload[i:i+10]
-	                 for i in range(0, len(randomize_payload), 10)]
-	payload = [(str(i) + payload[i])[::-1] for i in range(0, len(payload))]
-	return payload
+	# randomize_payload[::-1]
+	return
 
 def derandomize_payload(payload):
-	keys = payload.keys()
-	result = ""
-	for key in keys:
-		part = payload[key][0]
-		part = part[::-1]
-		result += part[1:]
+	# todo sort the element of payload using the first char of the part.
+	# keys = list(payload.keys())
+	# keys = [int(k) for k in keys]
+	# keys.sort()
+	# result = ""
+	# for key in keys:
+	# 	part = payload[str(key)][0]
+	# 	part = part.replace(str(key), "")
+	# 	result += part
 
+	result = ""
 	for char in RANDOM_CHAR:
 		result = result.replace(char, "")
-
-	return result.encode("ascii")
+	# result = result[::-1]
+	return result# [1:]
 
 
 class HTMLGenerator:
