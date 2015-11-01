@@ -150,6 +150,8 @@ if __name__ == "__main__":
 	http_server = sys.argv[1]
 	http_port = int(sys.argv[2])
 
+	logging.basicConfig(format='%(levelname)8s:%(asctime)s:%(funcName)20s():%(message)s',
+	                    filename='client.log', level=logging.INFO)
 	try:
 		local_server = sys.argv[3]
 	except IndexError:
@@ -165,8 +167,6 @@ if __name__ == "__main__":
 	url = url.format(PROTOCOL, http_server, http_port)
 	website = website.format(local_server, http_port)
 
-	logging.basicConfig(format='%(levelname)8s:%(asctime)s:%(funcName)20s():%(message)s',
-	                    filename='client.log', level=logging.INFO)
 
 	r_queries_thread = threading.Thread(None, receive_queries,
 	                                    name="Receive_queries thread")
