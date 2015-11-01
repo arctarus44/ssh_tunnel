@@ -3,10 +3,41 @@ client side of the tunnel"""
 
 import string
 import random
+
 from bs4 import BeautifulSoup
 
 URL_SIZE = 15
 SUP_SIZE = 5
+
+RANDOM_CHAR = ["_", ",", "@", "*", "_", " ", "[", "]", "{", "}"]
+
+def randomize_payload(payload):
+	if type(payload) is bytes:
+		payload = payload.decode()
+	randomize_payload = ""
+	for char in payload:
+		if random.getrandbits(1) == 0:
+			randomize_payload += random.choice(RANDOM_CHAR)
+		randomize_payload += char
+
+	payload = [randomize_payload[i:i+10]
+	                 for i in range(0, len(randomize_payload), 10)]
+	payload = [(str(i) + payload[i])[::-1] for i in range(0, len(payload))]
+	return payload
+
+def derandomize_payload(payload):
+	keys = payload.keys()
+	result = ""
+	for key in keys:
+		part = payload[key][0]
+		part = part[::-1]
+		result += part[1:]
+
+	for char in RANDOM_CHAR:
+		result = result.replace(char, "")
+
+	return result.encode("ascii")
+
 
 class HTMLGenerator:
 	""" Generate a straightforward random page to hide some content."""
