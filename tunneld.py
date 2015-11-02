@@ -86,7 +86,7 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 		except KeyError:
 			logging.debug("No payload")
 		else:
-			logging.debug("New reply received : %s", base64.b64decode(payload))
+			logging.debug("New reply received : %s", payload)
 			replies.put(base64.b64decode(payload))
 			self.send_response(200)
 			self.send_header(CONTENT_TYPE, TXT_HTML)

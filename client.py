@@ -104,7 +104,8 @@ def receive_queries():
 			else:
 				logging.error(http_error)
 
-		except urllib.error.URLError:
+		except urllib.error.URLError as error:
+			logging.error(error)
 			pass				# The client must run at all costs
 
 		else:
@@ -141,7 +142,7 @@ def forward_replies():
 		reply = forward_socket.recv(2048)
 		headers = create_post_header()
 		payload = base64.b64encode(reply)
-		payload = obf.randomize_payload(payload)
+		payload = obf.randomize_payload(payload.decode("ascii"))
 		params = {'payload': payload}
 		client = http.client.HTTPConnection(website)
 		url_params = urllib.parse.urlencode(params)

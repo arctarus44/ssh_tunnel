@@ -9,38 +9,45 @@ from bs4 import BeautifulSoup
 URL_SIZE = 15
 SUP_SIZE = 5
 
-RANDOM_CHAR = ["_", ",", "@", "*", "_", " ", "[", "]"]
+RANDOM_CHAR = ["_", ",", "@", "*", "-", " ", "[", "]"]
 
 def randomize_payload(payload):
-	# todo randomize the order of the element of the list before adding them
-	# into payload_d
-	print(payload)
-	if type(payload) is bytes:
-		payload = payload.decode()
-	randomize_payload = ""
+	# print("Avant = " + payload)
+	# nb_space = 0
+
+	# if payload[-2:] == "==":
+	# 	payload = payload[:-2]
+	# 	nb_space = 2
+
+	# if payload[-1:] == "=":
+	# 	payload = payload[:-1]
+	# 	nb_space = 1
+
+	result = "AZERTYUIOP1234567890"
 	for char in payload:
 		if random.getrandbits(1) == 0:
-			randomize_payload += random.choice(RANDOM_CHAR)
-		randomize_payload += char
-	# randomize_payload[::-1]
-	return
+			result += random.choice(RANDOM_CHAR)
+		result += char
+	result += "0987654321POIUYTREZA"
+	# result += str(nb_space)
+	# print("Après = " + result)
+	return result
 
 def derandomize_payload(payload):
-	# todo sort the element of payload using the first char of the part.
-	# keys = list(payload.keys())
-	# keys = [int(k) for k in keys]
-	# keys.sort()
-	# result = ""
-	# for key in keys:
-	# 	part = payload[str(key)][0]
-	# 	part = part.replace(str(key), "")
-	# 	result += part
-
-	result = ""
+	# print("Avant = " + payload)
+	# nb_space = int(payload[-1])
+	# payload = payload[20:-21]
+	payload = payload[20:-20]
+	print(payload)
+	result = payload
 	for char in RANDOM_CHAR:
-		result = result.replace(char, "")
-	# result = result[::-1]
-	return result# [1:]
+		if char in result:
+			result = result.replace(char, "")
+
+	# for i in range(0, nb_space):
+	# 	result += "="
+	# print("Après = " + result)
+	return result
 
 
 class HTMLGenerator:
