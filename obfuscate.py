@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 
 URL_SIZE = 15
 SUP_SIZE = 5
+PADD_SIZE = 17
 
 RANDOM_CHAR = ["_", ",", "@", "*", "-", " ", "[", "]"]
 
@@ -22,13 +23,22 @@ def randomize_payload(payload):
 	# if payload[-1:] == "=":
 	# 	payload = payload[:-1]
 	# 	nb_space = 1
+	left_padd = ''.join(random.choice(string.ascii_lowercase +
+	                                  string.ascii_uppercase +
+	                                  string.digits + string.punctuation)
+	                    for _ in range(PADD_SIZE))
+	right_padd = ''.join(random.choice(string.ascii_lowercase +
+	                                  string.ascii_uppercase +
+	                                  string.digits + string.punctuation)
+	                    for _ in range(PADD_SIZE))
 
-	result = "AZERTYUIOP1234567890"
+	result = left_padd
 	for char in payload:
 		if random.getrandbits(1) == 0:
 			result += random.choice(RANDOM_CHAR)
 		result += char
-	result += "0987654321POIUYTREZA"
+
+	result += right_padd
 	# result += str(nb_space)
 	# print("Après = " + result)
 	return result
@@ -36,9 +46,7 @@ def randomize_payload(payload):
 def derandomize_payload(payload):
 	# print("Avant = " + payload)
 	# nb_space = int(payload[-1])
-	# payload = payload[20:-21]
-	payload = payload[20:-20]
-	print(payload)
+	payload = payload[PADD_SIZE:-PADD_SIZE]
 	result = payload
 	for char in RANDOM_CHAR:
 		if char in result:
