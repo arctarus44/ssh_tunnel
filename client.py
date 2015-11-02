@@ -11,6 +11,7 @@ from time import sleep
 from random import choice
 import obfuscate as obf
 import http.client
+import requests
 
 
 SLEEP_NO_CLT = 2
@@ -52,8 +53,8 @@ def create_get_header():
 
 def create_post_header():
 	"""Create a header for a POST request."""
-	request_headers = {'Content-Type': 'text/html',
-	                   "User-Agent": choice(user_agents),}
+	request_headers = {'Content-Type': 'text/plain',
+	                   "User-agent": choice(user_agents),}
 	return request_headers
 
 
@@ -144,17 +145,14 @@ def forward_replies():
 		payload = base64.b64encode(reply)
 		payload = obf.randomize_payload(payload.decode("ascii"))
 		params = {'payload': payload}
-		client = http.client.HTTPConnection(website)
-		url_params = urllib.parse.urlencode(params)
-		logging.debug("Forwarding replies : %s.", params["payload"])
-		client.request("POST", ressource, url_params, headers)
+		r = requests.post(url + ressource, headers=headers, data=params)
 
 if __name__ == "__main__":
 	http_server = sys.argv[1]
 	http_port = int(sys.argv[2])
 
 	logging.basicConfig(format='%(levelname)8s:%(asctime)s:%(funcName)20s():%(message)s',
-	                    filename='client.log', level=logging.INFO)
+	                    filename='client.log', level=logging.DEBUG)
 	try:
 		local_server = sys.argv[3]
 	except IndexError:
