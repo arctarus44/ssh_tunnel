@@ -70,7 +70,8 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 				self.send_response(200)
 				self.send_header(CONTENT_TYPE, TXT_HTML)
 				self.end_headers()
-				content = obfuscate.obfuscate(str(self.path), query)
+				content = obfuscate.obfuscate(str(self.path),
+				                              query.decode("ascii"))
 				self.wfile.write(content)
 
 	def do_POST(self):
@@ -93,11 +94,14 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 			self.end_headers()
 			self.wfile.write(MSG_200)
 
+
+httpd = None
 ###########
 # Threads #
 ###########
 def httpd():
 	""" Start the http server and made it server forever."""
+	global httpd
 	logging.info("Starting the HTTP server thread")
 	server_class = http.server.HTTPServer
 	httpd = server_class((http_address, forwarding_port), TunnelHTTPHandler)
@@ -171,6 +175,9 @@ if __name__ == "__main__":
 	                                          forward_replies,
 	                                          name="Forward-Replies-thread")
 
-	httpd_thread.start()
-	forward_queries_thread.start()
-	forward_replies_thread.start()
+	try:
+		httpd_thread.start()
+		forward_queries_thread.start()
+		forward_replies_thread.start()
+	except:
+		 httpd.server_close()
