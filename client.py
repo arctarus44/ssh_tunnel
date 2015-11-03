@@ -12,6 +12,7 @@ from random import choice
 import obfuscate as obf
 import http.client
 import requests
+import time
 
 
 SLEEP_NO_CLT = 2
@@ -45,11 +46,22 @@ USER_AGENT = choice(user_agents)
 
 def create_get_header():
 	"""Create a header for a GET request."""
+	hour = int(time.strftime("%H", time.gmtime()))
 	request_headers = {
 		"Accept-Language": "en-US,en;q=0.5",
 		"User-Agent": USER_AGENT,
 		"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-		"Referer": "http://thewebsite.com",
+		"Referer": "http://www.google.fr/search?q=google",
+		"Date": time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()),
+		"Server": "ECS"
+		"Last-Modified": time.strftime("%a, %d %b %Y {0}:%M:%S GMT", time.gmtime())
+		"ETag": "0af64f232b5ce1:0"
+		Accept-Ranges
+		Vary
+		Content-encoding
+		Keep-Alive
+		Connection
+		Content-type
 	}
 	return request_headers
 

@@ -146,7 +146,7 @@ def forward_replies():
 
 if __name__ == "__main__":
 	logging.basicConfig(format='%(levelname)8s:%(asctime)s:%(funcName)20s():%(message)s',
-	                    filename='tunneld.log', level=logging.INFO)
+	                    filename='tunneld.log', level=logging.DEBUG)
 	try:
 		listening_port = int(sys.argv[1])
 	except IndexError:
