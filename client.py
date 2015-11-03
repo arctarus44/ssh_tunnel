@@ -42,14 +42,12 @@ user_agents = [
 	'Lynx/2.8.5rel.1 libwww-FM/2.14 SSL-MM/1.4.1 GNUTLS/1.2.9'
 ]
 
-USER_AGENT = choice(user_agents)
-
 def create_get_header():
 	"""Create a header for a GET request."""
 	hour = int(time.strftime("%H", time.gmtime()))
 	request_headers = {
 		"Accept-Language": "en-US,en;q=0.5",
-		"User-Agent": USER_AGENT,
+		"User-Agent": choice(user_agents),
 		"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 		"Referer": "http://www.google.fr/search?q=google",
 		"Date": time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()),
@@ -68,7 +66,7 @@ def create_get_header():
 def create_post_header():
 	"""Create a header for a POST request."""
 	request_headers = {'Content-Type': 'text/plain',
-	                   "User-agent": USER_AGENTS}
+	                   "User-agent": choice(user_agents),}
 	return request_headers
 
 
@@ -91,7 +89,7 @@ def receive_queries():
 
 	while True:
 		requested_url = url + obfuscate.random_url()
-		logging.debug("Requested url %s", requested_url)
+
 		request = urllib.request.Request(requested_url,
 		                                 headers = create_get_header())
 		try:
