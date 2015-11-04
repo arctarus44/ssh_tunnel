@@ -1,5 +1,8 @@
 """Implement the server side of the HTTP tunnel"""
 
+# todo in case of inactivity in the other side of the tunnel, clean the
+# queries and replies fifo, close the client socket.
+
 import http.server
 import threading
 from queue import Queue, Empty
@@ -9,18 +12,17 @@ import base64
 import urllib
 import logging
 import obfuscate as obf
+from utils import ConfigHandler
 
-# todo in case of inactivity in the other side of the tunnel, clean the
-# queries and replies fifo, close the client socket.
+
 
 CONTENT_TYPE = "Content-type"
 TXT_HTML = "text/html"
 PAYLOAD = "payload"
 MSG_200 = b"Thank you <3"
 
-listening_port = 2222
-forwarding_port = 8000
-http_address = "localhost"
+http_server = None
+http_port = None
 
 forward_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client = None
@@ -103,7 +105,7 @@ def httpd():
 	global httpd
 	logging.info("Starting the HTTP server thread")
 	server_class = http.server.HTTPServer
-	httpd = server_class((http_address, forwarding_port), TunnelHTTPHandler)
+	httpd = server_class((http_host, http_port), TunnelHTTPHandler)
 	httpd.serve_forever()
 
 def receive_queries():
@@ -147,23 +149,27 @@ def forward_replies():
 if __name__ == "__main__":
 	logging.basicConfig(format='%(levelname)8s:%(asctime)s:%(funcName)20s():%(message)s',
 	                    filename='tunneld.log', level=logging.INFO)
-	try:
-		listening_port = int(sys.argv[1])
-	except IndexError:
-		logging.info("Default value for the listening port (%s).",
-		             listening_port)
-	try:
-		forwarding_port = int(sys.argv[2])
-	except IndexError:
-		logging.info("Default value for the forwarding port (%s)",
-		             forwarding_port)
-	try:
-		http_address = sys.argv[3]
-	except IndexError:
-		logging.info("Default value for the http address (%s)",
-		             http_address)
 
-	forward_socket.bind(('localhost', listening_port))
+	conf = ConfigHandler()
+	conf.read_conf()
+
+	http_host = conf[conf.SCT_TUNNELD][conf.OPT_HTTP_HOST]
+	http_port = int(conf[conf.SCT_TUNNELD][conf.OPT_HTTP_PORT])
+	listening_host = conf[conf.SCT_TUNNELD][conf.OPT_LISTEN_HOST]
+	listening_port = int(conf[conf.SCT_TUNNELD][conf.OPT_LISTEN_PORT])
+
+
+	listen = "Listening on {0}:{1}.".format(listening_host, listening_port)
+	forward = "HTTP server on {0}:{1}.".format(http_server, http_port)
+
+	print(listen)
+	print(forward)
+	logging.info(listen)
+	logging.info(forward)
+	del(listen)
+	del(forward)
+
+	forward_socket.bind((listening_host, listening_port))
 	forward_socket.listen(1) # One client at a time
 
 	httpd_thread = threading.Thread(None, httpd, name="HTTPD-thread")

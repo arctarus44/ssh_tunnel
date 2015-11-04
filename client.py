@@ -12,12 +12,19 @@ from random import choice
 import obfuscate as obf
 import http.client
 import requests
+import time
+from utils import ConfigHandler
 
 
 SLEEP_NO_CLT = 2
 SLEEP_NO_DATA = 0.5
 SLEEP_DATA = 0.05
 PROTOCOL = "http://"
+
+http_server = None
+http_port = None
+listening_server = None
+listening_port = None
 
 url = "{0}{1}:{2}/"
 website = "{0}:{1}"
@@ -41,20 +48,33 @@ user_agents = [
 	'Lynx/2.8.5rel.1 libwww-FM/2.14 SSL-MM/1.4.1 GNUTLS/1.2.9'
 ]
 
+USER_AGENT = choice(user_agents)
+
 def create_get_header():
 	"""Create a header for a GET request."""
+	hour = int(time.strftime("%H", time.gmtime())) -1
+	mod_time = time.strftime("%a, %d %b %Y {0}:%M:%S GMT", time.gmtime()).format(hour)
 	request_headers = {
 		"Accept-Language": "en-US,en;q=0.5",
-		"User-Agent": choice(user_agents),
+		"User-Agent": USER_AGENT,
 		"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-		"Referer": "http://thewebsite.com",
+		"Referer": "http://www.google.fr/search?q=google",
+		"Date": time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()),
+		"Server": "ECS",
+		"Last-Modified": mod_time,
+		"ETag": "0af64f232b5ce1:0",
+		"Accept-Ranges": "bytes",
+		"Vary": "Accept-Encoding",
+		"Content-encoding": "gzip",
+		"Connection": "keep-alive",
+		"DNT": "1",
 	}
 	return request_headers
 
 def create_post_header():
 	"""Create a header for a POST request."""
 	request_headers = {'Content-Type': 'text/plain',
-	                   "User-agent": choice(user_agents),}
+	                   "User-agent": USER_AGENT}
 	return request_headers
 
 
@@ -77,7 +97,7 @@ def receive_queries():
 
 	while True:
 		requested_url = url + obfuscate.random_url()
-
+		logging.debug("Requested url %s", requested_url)
 		request = urllib.request.Request(requested_url,
 		                                 headers = create_get_header())
 		try:
@@ -120,7 +140,7 @@ def receive_queries():
 				logging.debug("Received query : %s", query)
 
 				if first_forward:
-					forward_socket.connect((local_server, server_port))
+					forward_socket.connect((forward_server, forward_port))
 					logging.info("Connected socket to %s:%s.", local_server,
 					             server_port)
 					logging.debug("Socket event unlocked")
@@ -148,26 +168,28 @@ def forward_replies():
 		r = requests.post(url + ressource, headers=headers, data=params)
 
 if __name__ == "__main__":
-	http_server = sys.argv[1]
-	http_port = int(sys.argv[2])
-
 	logging.basicConfig(format='%(levelname)8s:%(asctime)s:%(funcName)20s():%(message)s',
 	                    filename='client.log', level=logging.DEBUG)
-	try:
-		local_server = sys.argv[3]
-	except IndexError:
-		logging.info("Using default value for the local server address (%s).",
-		             local_server)
 
-	try:
-		server_port = int(sys.argv[4])
-	except IndexError:
-		logging.info("Using default value for the local server port (%s).",
-		             server_port)
+	conf = ConfigHandler()
+	conf.read_conf()
 
+	http_server = conf[conf.SCT_TUNNELD][conf.OPT_HTTP_HOST]
+	http_port = conf[conf.SCT_TUNNELD][conf.OPT_HTTP_PORT]
+	forward_server = conf[conf.SCT_CLIENT][conf.OPT_FORWARD_HOST]
+	forward_port = int(conf[conf.SCT_CLIENT][conf.OPT_FORWARD_PORT])
 	url = url.format(PROTOCOL, http_server, http_port)
 	website = website.format(local_server, http_port)
 
+	listen = "Listening on {0}:{1}.".format(http_server, http_port)
+	forward = "Forwarding on {0}:{1}.".format(forward_server, forward_port)
+
+	print(listen)
+	print(forward)
+	logging.info(listen)
+	logging.info(forward)
+	del(listen)
+	del(forward)
 
 	r_queries_thread = threading.Thread(None, receive_queries,
 	                                    name="Receive_queries thread")
@@ -180,4 +202,4 @@ if __name__ == "__main__":
 	except:
 		logging.error(sys.exc_info()[0])
 		forward_socket.close()
-		raise
+		rais
