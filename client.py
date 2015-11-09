@@ -4,7 +4,6 @@ import sys
 import threading
 import socket
 import logging
-import base64
 import urllib.request
 import urllib.error
 from time import sleep
@@ -13,6 +12,7 @@ import obfuscate as obf
 import http.client
 import requests
 import time
+import base64
 from utils import ConfigHandler
 
 
@@ -162,8 +162,9 @@ def forward_replies():
 		logging.debug("Forward replies thread unlocked.")
 		reply = forward_socket.recv(2048)
 		headers = create_post_header()
-		payload = base64.b64encode(reply)
-		payload = obf.randomize_payload(payload.decode("ascii"))
+		# payload = base64.b64encode(reply)
+		# payload = obf.randomize_payload(payload.decode("ascii"))
+		payload = obf.randomize_payload(reply)
 		params = {'payload': payload}
 		r = requests.post(url + ressource, headers=headers, data=params)
 
@@ -202,4 +203,4 @@ if __name__ == "__main__":
 	except:
 		logging.error(sys.exc_info()[0])
 		forward_socket.close()
-		rais
+		raise
