@@ -18,6 +18,10 @@ from utils import ConfigHandler
 
 CONTENT_TYPE = "Content-type"
 TXT_HTML = "text/html"
+CACHE_CONTROL = "Cache-Control"
+PRAGMA = "Pragma"
+NO_CACHE = "no-cache"
+MAX_AGE_0 = "max-age=0"
 PAYLOAD = "payload"
 MSG_200 = b"Thank you <3"
 
@@ -52,6 +56,7 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 			self.send_response(404)
 			self.send_header(CONTENT_TYPE, TXT_HTML)
 			self.end_headers()
+			self.wfile.write("</html><body><p>One day</p></body></html>".encode("ascii"))
 		else:
 			try:
 				query = base64.b64encode(queries.get(block=False))
@@ -61,18 +66,23 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 					self.send_response(503)
 					self.send_header(CONTENT_TYPE, TXT_HTML)
 					self.end_headers()
+					self.wfile.write("</html><body><p>42</p></body></html>".encode("ascii"))
 					client = None
 				else:
 					logging.debug("Nothing to forward at this moment.")
 					self.send_response(500)
 					self.send_header(CONTENT_TYPE, TXT_HTML)
 					self.end_headers()
+					self.wfile.write("</html><body><p>lorem lipsum</p></body></html>".encode("ascii"))
 			else:
 				logging.debug("Forwarding the query :%s", base64.b64decode(query))
+				content= obfuscate.obfuscate(str(self.path),
+				                                            query)
 				self.send_response(200)
 				self.send_header(CONTENT_TYPE, TXT_HTML)
+				self.send_header(CACHE_CONTROL, MAX_AGE_0)
+				self.send_header(CACHE_CONTROL, MAX_AGE_0)
 				self.end_headers()
-				content = obfuscate.obfuscate(str(self.path), query)
 				self.wfile.write(content)
 
 	def do_POST(self):
@@ -84,12 +94,14 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 		data = urllib.parse.parse_qs(self.rfile.read(length).decode('utf-8'))
 		try:
 			payload = data[PAYLOAD][0]
+			print(payload)
 			payload = obf.derandomize_payload(payload)
 		except KeyError:
 			logging.debug("No payload")
 		else:
 			logging.debug("New reply received : %s", payload)
-			replies.put(base64.b64decode(payload))
+			# replies.put(base64.b64decode(payload))
+			replies.put(payload)
 			self.send_response(200)
 			self.send_header(CONTENT_TYPE, TXT_HTML)
 			self.end_headers()
@@ -148,7 +160,7 @@ def forward_replies():
 
 if __name__ == "__main__":
 	logging.basicConfig(format='%(levelname)8s:%(asctime)s:%(funcName)20s():%(message)s',
-	                    filename='tunneld.log', level=logging.INFO)
+	                    filename='tunneld.log', level=logging.DEBUG)
 
 	conf = ConfigHandler()
 	conf.read_conf()
@@ -185,4 +197,5 @@ if __name__ == "__main__":
 		forward_queries_thread.start()
 		forward_replies_thread.start()
 	except:
-		 httpd.server_close()
+		httpd.server_close()
+		raise
