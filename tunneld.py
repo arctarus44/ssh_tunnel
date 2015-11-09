@@ -72,10 +72,10 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 					self.end_headers()
 			else:
 				logging.debug("Forwarding the query :%s", base64.b64decode(query))
-				content, content_type = obfuscate.obfuscate(str(self.path),
+				content= obfuscate.obfuscate(str(self.path),
 				                                            query)
 				self.send_response(200)
-				self.send_header(CONTENT_TYPE, content_type)
+				self.send_header(CONTENT_TYPE, TXT_HTML)
 				self.send_header(CACHE_CONTROL, MAX_AGE_0)
 				self.send_header(PRAGMA, NO_CACHE)
 				self.end_headers()
