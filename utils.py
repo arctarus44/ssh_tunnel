@@ -15,6 +15,9 @@ class ConfigHandler(cp.ConfigParser):
 	OPT_FORWARD_HOST = "forwarding_host"
 	OPT_FORWARD_PORT = "forwarding_port"
 
+	SCT_AES = "AES"
+	OPT_ENCRYPTION_KEY = "key"
+
 	__LOCALHOST = "localhost"
 	__DFLT_HTTP_PORT = 80
 	__DFLT_FORWARD_PORT = 22
