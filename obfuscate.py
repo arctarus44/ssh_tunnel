@@ -3,12 +3,13 @@ client side of the tunnel"""
 
 import string
 import random
-
+from Crypto.Cipher import AES
 from bs4 import BeautifulSoup
+import base64
 
 URL_SIZE = 15
 SUP_SIZE = 5
-PADD_SIZE = 17
+PADD_SIZE = 9
 
 RANDOM_CHAR = ["_", ",", "@", "*", "-", " ", "[", "]"]
 
@@ -23,7 +24,8 @@ def randomize_payload(payload):
 	left_padd = ''.join(random.choice(string.ascii_lowercase +
 	                                  string.ascii_uppercase +
 	                                  string.digits + string.punctuation)
-	                    for _ in range(PADD_SIZE))
+	                    for _ in range(PADD_SIZE-2))
+	left_padd += "=="
 	right_padd = ''.join(random.choice(string.ascii_lowercase +
 	                                  string.ascii_uppercase +
 	                                  string.digits + string.punctuation)
@@ -49,6 +51,25 @@ def derandomize_payload(payload):
 	# 	result += "="
 	# print("Après = " + result)
 	return result
+
+class Encryption:
+
+	def __init__(self, key):
+		# todo : generate a random iv
+		self.__iv = 'This is an IV456' # I know, I am not proud of this one...
+		key = "0123456789ABCDEF"
+		self.__encryptor = AES.new(key, AES.MODE_CBC, self.__iv)
+		self.__decryptor = AES.new(key, AES.MODE_CBC, self.__iv)
+
+	def encrypt_me(self, data):
+		"""Encrypt the data using the key passed during the initialization
+		of the instance."""
+		return self.__encryptor.encrypt(data)
+
+	def decrypt(self, data):
+		"""Decrypt the data using the key passed during the initialization
+		of the instance."""
+		return self.__decryptor.decrypt(data)
 
 
 class HTMLGenerator:
@@ -139,7 +160,6 @@ class Obfuscate:
 	__url_img = [".jpg", ".gif", ".png"]
 	__url_text = ["toto.html", "fooo.html", "barrr.php"]
 	__end_url = __url_img + __url_text # end of an url
-	__end_url = __url_text # end of an url
 	__element = ["span", "a", "i"] # every markers used to store data
 	__GIF = "gif"
 	__JPG = "jpg"
