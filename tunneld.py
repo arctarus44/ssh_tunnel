@@ -76,10 +76,10 @@ class TunnelHTTPHandler(http.server.SimpleHTTPRequestHandler):
 					self.wfile.write("</html><body><p>lorem lipsum</p></body></html>".encode("ascii"))
 			else:
 				logging.debug("Forwarding the query :%s", base64.b64decode(query))
-				content= obfuscate.obfuscate(str(self.path),
+				content, content_type = obfuscate.obfuscate(str(self.path),
 				                                            query)
 				self.send_response(200)
-				self.send_header(CONTENT_TYPE, TXT_HTML)
+				self.send_header(CONTENT_TYPE, content_type)
 				self.send_header(CACHE_CONTROL, MAX_AGE_0)
 				self.send_header(CACHE_CONTROL, MAX_AGE_0)
 				self.end_headers()

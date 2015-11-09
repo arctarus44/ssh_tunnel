@@ -12,6 +12,11 @@ PADD_SIZE = 17
 
 RANDOM_CHAR = ["_", ",", "@", "*", "-", " ", "[", "]"]
 
+CONTENT_TYPE_JPG = "image/jpeg"
+CONTENT_TYPE_GIF = "image/gif"
+CONTENT_TYPE_PNG = "image/png"
+CONTENT_TYPE_HTML = "text/html"
+
 def randomize_payload(payload):
 	# print("Avant = " + payload)
 	# nb_space = 0
@@ -33,10 +38,11 @@ def randomize_payload(payload):
 	                    for _ in range(PADD_SIZE))
 
 	result = left_padd
+	print(payload)
 	for char in payload:
 		if random.getrandbits(1) == 0:
 			result += random.choice(RANDOM_CHAR)
-		result += char
+		result += chr(char)
 
 	result += right_padd
 	# result += str(nb_space)
@@ -146,7 +152,6 @@ class Obfuscate:
 	__url_img = [".jpg", ".gif", ".png"]
 	__url_text = ["toto.html", "fooo.html", "barrr.php"]
 	__end_url = __url_img + __url_text # end of an url
-	__end_url = __url_text # end of an url
 	__element = ["span", "a", "i"] # every markers used to store data
 	__GIF = "gif"
 	__JPG = "jpg"
@@ -182,9 +187,16 @@ class Obfuscate:
 		"""Obfuscate data using url to determine wich kind of obfuscation to
 		used."""
 		if url[-4:] in self.__url_img:
-			return self.__obfuscate_image(url, data)
+			content_type = None
+			if url[-3:] == ".jpg":
+				content_type = CONTENT_TYPE_JPG
+			elif url[-3:] == ".png":
+				content_type = CONTENT_TYPE_PNG
+			elif url[-3:] == ".gif":
+				content_type = CONTENT_TYPE_GIF
+			return self.__obfuscate_image(url, data), content_type
 		if url[-9:] in self.__url_text:
-			return self.__obfuscate_text(url, data)
+			return self.__obfuscate_text(url, data), CONTENT_TYPE_HTML
 		raise ValueError("No obfuscation scheme for this url {}.".format(url))
 
 	def deobfuscate(self, url, data):
