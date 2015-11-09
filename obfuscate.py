@@ -13,9 +13,6 @@ PADD_SIZE = 17
 RANDOM_CHAR = ["_", ",", "@", "*", "-", " ", "[", "]"]
 
 def randomize_payload(payload):
-	# print("Avant = " + payload)
-	# nb_space = 0
-
 	# if payload[-2:] == "==":
 	# 	payload = payload[:-2]
 	# 	nb_space = 2
@@ -39,13 +36,9 @@ def randomize_payload(payload):
 		result += char
 
 	result += right_padd
-	# result += str(nb_space)
-	# print("Après = " + result)
 	return result
 
 def derandomize_payload(payload):
-	# print("Avant = " + payload)
-	# nb_space = int(payload[-1])
 	payload = payload[PADD_SIZE:-PADD_SIZE]
 	result = payload
 	for char in RANDOM_CHAR:

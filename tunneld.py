@@ -21,10 +21,12 @@ TXT_HTML = "text/html"
 PAYLOAD = "payload"
 MSG_200 = b"Thank you <3"
 
+CACHE_CONTROL = "Cache-Control"
 PRAGMA = "Pragma"
 NO_CACHE = "no-cache"
+MAX_AGE_0 = "max-age=0"
 
-http_server = None
+http_host = None
 http_port = None
 
 forward_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -167,7 +169,7 @@ if __name__ == "__main__":
 
 
 	listen = "Listening on {0}:{1}.".format(listening_host, listening_port)
-	forward = "HTTP server on {0}:{1}.".format(http_server, http_port)
+	forward = "HTTP server on {0}:{1}.".format(http_host, http_port)
 
 	print(listen)
 	print(forward)

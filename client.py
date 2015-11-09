@@ -162,9 +162,8 @@ def forward_replies():
 		logging.debug("Forward replies thread unlocked.")
 		reply = forward_socket.recv(2048)
 		headers = create_post_header()
-		# payload = base64.b64encode(reply)
-		# payload = obf.randomize_payload(payload.decode("ascii"))
-		payload = obf.randomize_payload(reply)
+		payload = base64.b64encode(reply)
+		payload = obf.randomize_payload(payload.decode("ascii"))
 		params = {'payload': payload}
 		r = requests.post(url + ressource, headers=headers, data=params)
 
